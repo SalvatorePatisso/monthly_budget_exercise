@@ -14,11 +14,11 @@ class ConnectionDB():
         """
 
         if env is not None:
-            try:
-                load_dotenv(env_path=env)
-                self.db_path = os.getenv("DB_PATH")
-            except Exception as e:
-                raise ValueError(f"Error loading environment file: {e}")
+                if not os.path.exists(env):
+                    raise ValueError(f"Environment file does not exist: {env}")
+                else:
+                    load_dotenv(dotenv_path=env)
+                    self.db_path = os.getenv("DB_PATH")
         else:
             if not db_path:
                 raise ValueError("Database path must be provided if env is not set.")
@@ -26,20 +26,38 @@ class ConnectionDB():
                 raise ValueError(f"Database file does not exist: {db_path}")
             else: 
                 self.db_path = db_path
-    def query(self, query, params=None):
-        """Execute a query on the database.
+                
+    def execute_ddl(self, sql, params=None):
+        """Execute an SQL statement (INSERT, UPDATE, DELETE, etc.) on the database.
         Args:
-            query (str): The SQL query to execute.
-            params (tuple, optional): Parameters to pass to the query.
+            sql (str): The SQL statement to execute.
+            params (tuple, optional): Parameters to pass to the statement.
         Returns:
-            list: A list of rows returned by the query.
+            int: Number of affected rows.
         """
         try:
             with sqlite3.connect(self.db_path) as conn:
-                # interact with database
                 cursor = conn.cursor()
-                cursor.execute(query, params or ())
-                rows = cursor.fetchall()
-                return rows
+                cursor.execute(sql, params or ())
+                conn.commit()
+                return cursor.rowcount
         except sqlite3.OperationalError as e:
-            print("Failed to open database:", e)
+            print("Failed to execute SQL:", e)
+            return 0
+
+    def execute_query(self, sql, params=None):
+        """Execute a SELECT SQL statement and return the results.
+        Args:
+            sql (str): The SQL SELECT statement to execute.
+            params (tuple, optional): Parameters to pass to the statement.
+        Returns:
+            list: List of rows returned by the query.
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql, params or ())
+                return cursor.fetchall()
+        except sqlite3.OperationalError as e:
+            print("Failed to execute SQL:", e)
+            return []

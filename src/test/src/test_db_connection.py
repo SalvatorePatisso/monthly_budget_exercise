@@ -1,8 +1,11 @@
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import sqlite3
 import tempfile
-import pytest
 from python.dao.db_connection import ConnectionDB
+import pytest
+
 
 @pytest.fixture
 def temp_db_file():
@@ -49,10 +52,10 @@ def test_query_invalid_sql(temp_db_file, capsys):
     captured = capsys.readouterr()
     assert "Failed to open database:" in captured.out
 
-def test_init_with_env(tmp_path):
+def test_init_with_env(temp_db_file,tmp_path):
     # Create a .env file
     env_file = tmp_path / ".env"
-    db_file = tmp_path / "test.db"
+    db_file = temp_db_file
     sqlite3.connect(db_file).close()
     env_file.write_text(f"DB_PATH={db_file}\n")
     db = ConnectionDB(env=str(env_file))
@@ -62,3 +65,6 @@ def test_init_with_env_file_error(tmp_path):
     # Pass a non-existent .env file
     with pytest.raises(ValueError):
         ConnectionDB(env=str(tmp_path / "nonexistent.env"))
+
+if __name__ == "__main__":
+    pytest.main([__file__])
