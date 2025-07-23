@@ -3,20 +3,21 @@ from .db_connection import ConnectionDB
 class UserDAO:
     """Data access object for the ``users`` table."""
 
-    def __init__(self, connection: ConnectionDB) -> None:
-        self.connection = connection
+    def __init__(self,db_path: str = None, env: str = None):
+        """Initialize the UserDAO with a database connection."""
+        self.connection = ConnectionDB(db_path, env)
 
     def get_all_users(self):
         """Return a list of all users."""
         query = "SELECT user_id, username, email, password FROM users"
-        return self.connection.query(query)
+        return self.connection.execute_query(query)
 
     def get_user_by_id(self, user_id: int):
         """Return a single user matching ``user_id`` or ``None`` if not found."""
         query = (
             "SELECT user_id, username, email, password FROM users WHERE user_id=?"
         )
-        rows = self.connection.query(query, (user_id,))
+        rows = self.connection.execute_query(query, (user_id,))
         return rows[0] if rows else None
 
     def get_user_by_username(self, username: str):
@@ -24,7 +25,7 @@ class UserDAO:
         query = (
             "SELECT user_id, username, email, password FROM users WHERE username=?"
         )
-        rows = self.connection.query(query, (username,))
+        rows = self.connection.execute_query(query, (username,))
         return rows[0] if rows else None
 
     def create_user(self, username: str, email: str, password: str) -> int:
@@ -33,7 +34,7 @@ class UserDAO:
             "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
         )
         self.connection.query(insert_q, (username, email, password))
-        user_id = self.connection.query("SELECT last_insert_rowid()")
+        user_id = self.connection.execute_ddl("SELECT last_insert_rowid()")
         return user_id[0][0]
 
     def update_user(
@@ -60,9 +61,9 @@ class UserDAO:
             return False
         params.append(user_id)
         query = f"UPDATE users SET {', '.join(fields)} WHERE user_id=?"
-        self.connection.query(query, tuple(params))
+        self.connection.execute_ddl(query, tuple(params))
         return True
 
     def delete_user(self, user_id: int) -> None:
         """Remove a user from the database."""
-        self.connection.query("DELETE FROM users WHERE user_id=?", (user_id,))
+        self.connection.execute_ddl("DELETE FROM users WHERE user_id=?", (user_id,))
