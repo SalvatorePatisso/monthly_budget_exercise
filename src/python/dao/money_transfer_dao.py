@@ -8,10 +8,10 @@ class MoneyTransferDAO:
         self.db_connection = ConnectionBB(db_path, env)
 
     def add_transaction(self, amount: float,
-                         category_id: None int,
-                         description: str,
-                         user_id: int,
-                         ):
+                        category_id: None int,
+                        description: str,
+                        user_id: int,
+                        ):
         """Add a new transaction to the database."""
         sql = "INSERT INTO transactions (amount, category_id, description) VALUES (?, ?, ?)"
         return self.db_connection.execute_ddl(sql, (amount, category_id, description))
