@@ -2,7 +2,6 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from python.dao.money_transfer_dao import MoneyTransferDAO
-from python.dao.db_connection import ConnectionDB
 import pytest
 @pytest.fixture
 
