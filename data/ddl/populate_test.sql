@@ -1,7 +1,6 @@
 -- This SQL script is intended for populating test data into the wallet_tracker database.
 -- Add your INSERT statements below to create sample data for testing purposes.
 
-
 INSERT INTO users (user_id, username, email, password) VALUES
 (1, 'alice', 'alice@example.com', 'password123'),
 (2, 'bob', 'bob@example.com', 'securepass'),
@@ -18,4 +17,3 @@ INSERT INTO money_transfer (transaction_id, date, amount, description, category_
 (2, '2023-01-20', 100.00, 'Electricity bill', 2, 2),
 (3, '2023-01-25', 30.00, 'Movie night', 3, 3);
 
-.save debug.db

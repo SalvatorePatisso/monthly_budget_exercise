@@ -29,13 +29,12 @@ class UserDAO:
         return rows[0] if rows else None
 
     def create_user(self, username: str, email: str, password: str) -> int:
-        """Insert a new user and return the inserted ``user_id``."""
+        """Insert a new user and return number of row inserted"""
         insert_q = (
             "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
         )
-        self.connection.query(insert_q, (username, email, password))
-        user_id = self.connection.execute_ddl("SELECT last_insert_rowid()")
-        return user_id[0][0]
+        return self.connection.execute_ddl(insert_q, (username, email, password))
+        
 
     def update_user(
         self,
@@ -60,10 +59,10 @@ class UserDAO:
         if not fields:
             return False
         params.append(user_id)
-        query = f"UPDATE users SET {', '.join(fields)} WHERE user_id=?"
+        query = f"UPDATE users SET {', '.join(fields)} WHERE user_id=(?)"
         self.connection.execute_ddl(query, tuple(params))
         return True
 
-    def delete_user(self, user_id: int) -> None:
-        """Remove a user from the database."""
-        self.connection.execute_ddl("DELETE FROM users WHERE user_id=?", (user_id,))
+    def delete_user(self, user_id: int) -> int:
+        """Remove a user from the database. Returns number of rows deleted."""
+        return self.connection.execute_ddl("DELETE FROM users WHERE user_id=?", (user_id,))
