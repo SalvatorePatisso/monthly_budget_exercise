@@ -23,21 +23,33 @@ class CategoriesDAO:
     
     def get_category_by_id(self, category_id: int):
         """Retrieve a category by its ID."""
-        sql = "SELECT * FROM categories WHERE id = ?"
+        sql = "SELECT * FROM categories WHERE category_id = (?)"
         result = self.db_connection.execute_query(sql, (category_id,))
         return result[0] if result else None
     
-    def update_category_name(self, category_id: int, name: str):
-        """Update the name of an existing category."""
-        sql = "UPDATE categories SET name = ? WHERE id = ?"
-        return self.db_connection.execute_ddl(sql, (name, category_id))
-
-    def update_category_descr(self, category_id: int, descr: str):    
-        """Update the details of an existing category."""
-        sql = "UPDATE categories SET name = ? WHERE id = ?"
-        return self.db_connection.execute_ddl(sql, (name, category_id))
+    def update_category(
+        self,
+        category_id: int,
+        name: str | None = None,
+        description: str | None = None
+    ) -> bool:
+        """Update an existing category. Returns ``True`` if at least one field was updated."""
+        fields = []
+        params = []
+        if name is not None:
+            fields.append("name=?")
+            params.append(name)
+        if description is not None:
+            fields.append("description=?")
+            params.append(description)
+        if not fields:
+            return False
+        params.append(category_id)
+        query = f"UPDATE categories SET {', '.join(fields)} WHERE category_id=(?)"
+        self.db_connection.execute_ddl(query, tuple(params))
+        return True
     
     def delete_category(self, category_id: int):
         """Delete a category by its ID."""
-        sql = "DELETE FROM categories WHERE id = ?"
+        sql = "DELETE FROM categories WHERE category_id = ?"
         return self.db_connection.execute_ddl(sql, (category_id,))
