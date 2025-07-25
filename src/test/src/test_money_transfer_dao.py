@@ -58,6 +58,19 @@ def test_get_transfer_by_id(dao_connection):
     transfer = dao_connection.get_transfer_by_id(1)
     assert transfer is not None, "Transfer should be found by ID"
 
+def test_search_transaction_for_attributes(dao_connection):
+    """Test searching for transactions with specific attributes."""
+    attributes = {
+        "start_date": "2023-10-01",
+        "end_date": "2023-10-31",
+        "amount": 100.0,
+        "category_id": 1,
+    }
+    # Assuming the attributes are valid and exist in the database
+    # This will depend on the actual data in your database
+    results = dao_connection.search_transaction_for_attributes(attributes)
+    assert isinstance(results, list), "Should return a list of transactions"
+    assert len(results) > 0, "Should find at least one transaction matching the criteria"
 
 if __name__ == "__main__":
     pytest.main([__file__])
