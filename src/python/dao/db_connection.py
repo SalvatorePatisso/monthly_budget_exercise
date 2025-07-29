@@ -42,7 +42,7 @@ class ConnectionDB():
                 conn.commit()
                 return cursor.rowcount
         except sqlite3.OperationalError as e:
-            print("Failed to execute SQL:", e)
+            print("Failed to open database:", e)
             return 0
 
     def execute_query(self, sql, params=None):
@@ -59,5 +59,10 @@ class ConnectionDB():
                 cursor.execute(sql, params or ())
                 return cursor.fetchall()
         except sqlite3.OperationalError as e:
-            print("Failed to execute SQL:", e)
+            print("Failed to open database:", e)
             return []
+
+    # Backwards compatibility with older tests
+    def query(self, sql, params=None):
+        """Alias for execute_query."""
+        return self.execute_query(sql, params)
