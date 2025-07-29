@@ -1,0 +1,38 @@
+"""Utility class for interacting with Azure OpenAI GPT-4o."""
+
+from __future__ import annotations
+
+import os
+from typing import Iterable, Mapping
+
+
+class AzureGPT4O:
+    """Simple wrapper around the Azure OpenAI GPT-4o deployment."""
+
+    def __init__(self, *, endpoint: str | None = None, api_key: str | None = None,
+                 deployment: str | None = None, api_version: str = "2024-05-01-preview"):
+        self.endpoint = endpoint or os.getenv("AZURE_OPENAI_ENDPOINT") or os.getenv("PROJECT_ENDPOINT")
+        self.api_key = api_key or os.getenv("AZURE_OPENAI_KEY")
+        self.deployment = deployment or os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        self.api_version = api_version
+        if not all([self.endpoint, self.api_key, self.deployment]):
+            raise ValueError("Endpoint, API key and deployment must be provided")
+
+    def chat_completion(self, messages: Iterable[Mapping[str, str]], **kwargs) -> str:
+        """Send chat messages to the model and return the response text."""
+        try:
+            import openai
+        except ImportError as exc:
+            raise ImportError("openai package is required to use AzureGPT4O") from exc
+
+        openai.api_type = "azure"
+        openai.api_base = self.endpoint
+        openai.api_version = self.api_version
+        openai.api_key = self.api_key
+
+        response = openai.ChatCompletion.create(
+            engine=self.deployment,
+            messages=list(messages),
+            **kwargs,
+        )
+        return response.choices[0].message["content"]
