@@ -15,6 +15,21 @@ def dao_connection():
     dao = MoneyTransferDAO(db_path=db_path,env=None)
     yield dao
 
+def test_create_multiple_transfers(dao_connection):
+    """Test creating multiple money transfers."""
+    transfers = [
+        ("2023-10-02", 200.0, 1, 1, "Bulk transfer 1", True),
+        ("2023-10-03", 300.0, 2, 1, "Bulk transfer 2", False),
+    ]
+    # Flatten the list of tuples for the query parameters
+    flattened_transfers = [item for transfer in transfers for item in transfer]
+    print("Flattened transfers: ",flattened_transfers)
+    print("flattened_length: ", len(flattened_transfers))
+    result = dao_connection.create_multiple_transfers(transfers)
+    assert result == len(transfers), "Should insert all transfers successfully"
+
+
+
 def test_create_transfer(dao_connection):
     """Test creating a money transfer."""
     date = "2023-10-01"

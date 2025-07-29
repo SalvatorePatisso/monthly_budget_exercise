@@ -40,6 +40,7 @@ class MoneyTransferDAO:
             attributes.remove(MoneyTransferAttribute.END_AMOUNT.value)
 
         return attributes, query
+    
     def _insert_date_range(self, attributes: list, query: str):     
     # Check if the attributes contain date range conditions
         if (MoneyTransferAttribute.MONEY_TRANSFER_START_DATE.value in attributes) and (MoneyTransferAttribute.MONEY_TRANSFER_END_DATE.value in attributes):
@@ -97,6 +98,35 @@ class MoneyTransferDAO:
 
         return self.db_connection.execute_query(query, tuple(values))
 
+    def _add_values_to_query_string(self,transfers):
+        values = ""
+        for i,transfer in enumerate(transfers):
+            question_mark = ""
+            for j, elem in enumerate(transfer):
+                if j == len(transfer)-1:
+                    question_mark += "?"
+                else:
+                    question_mark += "?,"
+
+            if i == len(transfers)-1:
+                value = "("+question_mark+"); "
+            else:
+                value = "("+question_mark+"), "
+            values += value
+        return values
+    
+    def create_multiple_transfers(self, transfers: list[tuple]) -> int:
+        """Insert multiple money transfers and return the number of rows inserted."""
+        insert_query = (
+            "INSERT INTO money_transfer (date, amount, category_id, user_id, description, incoming) VALUES "
+        )
+        insert_query += self._add_values_to_query_string(transfers)
+
+        print(insert_query)#TODO REMOVE
+        
+        flattened_transfers = [item for transfer in transfers for item in transfer]
+        return self.db_connection.execute_ddl(insert_query, flattened_transfers)
+    
     def create_transfer(self, 
                          date: str, 
                          amount: float, 
