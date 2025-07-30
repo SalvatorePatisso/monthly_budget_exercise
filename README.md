@@ -20,15 +20,16 @@ print(response)
 
 ## crewAI document analysis
 
-A helper class is provided to process receipts or invoices using the
-[crewAI](https://github.com/joaomdmoura/crewai) agent framework. It creates
-an agent capable of extracting expenses from a piece of text.
-The `CrewDocumentProcessor` will require the optional `crewai` package.
+The project includes a helper class built on top of
+[crewAI](https://github.com/joaomdmoura/crewai).  It now defines two
+agents: one reads a document and extracts the expenses into JSON while the
+second agent stores those expenses into the local SQLite database.  The
+`CrewDocumentProcessor` will require the optional `crewai` package.
 
 ```python
 from python.ai import CrewDocumentProcessor
 
 processor = CrewDocumentProcessor()
-expenses = processor.parse_text("""Receipt\n1/1/2024 Coffee 2.50 EUR""")
+expenses = processor.parse_file("receipt.txt")
 print(expenses)
 ```
