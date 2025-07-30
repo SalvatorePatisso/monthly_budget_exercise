@@ -12,8 +12,23 @@ This project now includes a small wrapper around Azure OpenAI's GPT-4o model. Co
 Example usage:
 
 ```python
-from python.ai.azure_gpt import AzureGPT4O
+from python.ai import AzureGPT4O
 client = AzureGPT4O()
 response = client.chat_completion([{"role": "user", "content": "Hello"}])
 print(response)
+```
+
+## crewAI document analysis
+
+A helper class is provided to process receipts or invoices using the
+[crewAI](https://github.com/joaomdmoura/crewai) agent framework. It creates
+an agent capable of extracting expenses from a piece of text.
+The `CrewDocumentProcessor` will require the optional `crewai` package.
+
+```python
+from python.ai import CrewDocumentProcessor
+
+processor = CrewDocumentProcessor()
+expenses = processor.parse_text("""Receipt\n1/1/2024 Coffee 2.50 EUR""")
+print(expenses)
 ```
