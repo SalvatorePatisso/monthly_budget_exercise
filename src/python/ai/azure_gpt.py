@@ -1,7 +1,7 @@
 """Utility class for interacting with Azure OpenAI GPT-4o."""
 
 from __future__ import annotations
-
+from dotenv import load_dotenv
 import os
 from typing import Iterable, Mapping
 
@@ -11,6 +11,7 @@ class AzureGPT4O:
 
     def __init__(self, *, endpoint: str | None = None, api_key: str | None = None,
                  deployment: str | None = None, api_version: str = "2024-05-01-preview"):
+        load_dotenv()
         self.endpoint = endpoint or os.getenv("AZURE_OPENAI_ENDPOINT") or os.getenv("PROJECT_ENDPOINT")
         self.api_key = api_key or os.getenv("AZURE_OPENAI_KEY")
         self.deployment = deployment or os.getenv("AZURE_OPENAI_DEPLOYMENT")
@@ -29,7 +30,7 @@ class AzureGPT4O:
         openai.api_base = self.endpoint
         openai.api_version = self.api_version
         openai.api_key = self.api_key
-
+        print("Messages: ",messages)#TODO DEBUG
         response = openai.ChatCompletion.create(
             engine=self.deployment,
             messages=list(messages),

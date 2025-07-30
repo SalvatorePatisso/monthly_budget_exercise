@@ -1,15 +1,19 @@
-from azure_gpt import AzureGPT4O
+from .azure_gpt import AzureGPT4O
 from typing import Iterable, Mapping
 
 class ChatBot():
     def __init__(self, model: str = 'azure_gpt', history : Iterable[Mapping[str,str]] = [], system_message: str = ""):
         
         #init system message to tell the llm how to behave
-        self.system_message = system_message
+        self.system_prompt = system_message
 
         #init chat history
-        self.history = [ {'role': 'system', 'content':system_message} ] + history 
-
+        if not history[0]['role'] == 'system':
+            self.history = [ {'role': 'system', 'content': system_message} ] + history
+        else: 
+            self.history = history
+            self.system_prompt = self.history[0]['content']
+        
         #initialize model
         if model == 'azure_gpt':
             self.llm  = AzureGPT4O()
@@ -23,13 +27,12 @@ class ChatBot():
             response(strs): The response of the model."""
         
         #add last input to history 
-        self.history = self.history + [ {'role': 'user', 'content': input} ]
-
+        self.history = self.history + [{'role': 'user', 'content': input}]
         #get response
-        response = self.llm.chat_completions(messages = self.history)
+        response = self.llm.chat_completion(messages = self.history)
 
         #add response to chat history 
-        self.history = self.history + [ {'role': 'assistant', 'content': response}]
+        self.history = self.history + [{'role': 'assistant', 'content': response}] 
 
         return response
     
@@ -42,4 +45,4 @@ class ChatBot():
    
     def reset_history(self):
         """Reset history to an empty list, without affecting the system prompt"""
-        self.history = self.history[0]
+        self.history = [self.history[0]]
