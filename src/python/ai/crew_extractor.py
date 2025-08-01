@@ -23,7 +23,7 @@ class CrewDocumentProcessor:
             ) from exc
 
         if crew is not None:
-            self.crew = crew
+            self.crew = crewsd
             return
 
         self.db_path = db_path or os.path.join(
@@ -39,19 +39,7 @@ class CrewDocumentProcessor:
             with open(path, "r", encoding="utf-8") as fh:
                 return fh.read()
 
-        def insert_expenses(expenses_json: str) -> int:
-            """Tool to insert expenses into the database."""
-            expenses = json.loads(expenses_json)
-            dao = MoneyTransferDAO(db_path=self.db_path)
-            rows = 0
-            for exp in expenses:
-                rows += dao.create_transfer(
-                    exp.get("date"),
-                    float(exp.get("amount")),
-                    None,
-                    1,
-                    exp.get("description"),
-                )
+       
             return rows
 
         extractor = Agent(
@@ -88,6 +76,21 @@ class CrewDocumentProcessor:
         )
 
         self.crew = Crew(agents=[extractor, db_agent], tasks=[extract_task, insert_task])
+   
+    def insert_expense_from_json(expenses_json: str) -> int:
+            """Tool to insert expenses into the database."""
+            expenses = json.loads(expenses_json)
+            dao = MoneyTransferDAO(db_path=self.db_path)
+            rows = 0
+            for exp in expenses:
+                rows += dao.create_transfer(
+                    exp.get("date"),
+                    float(exp.get("amount")),
+                    exp.get("category_id"),
+                    exp.get("user_id"),
+                    exp.get("description"),
+                    exp.get("incoming")
+                )
 
     def parse_file(self, file_path: str) -> List[Mapping[str, str]]:
         """Run the crew on ``file_path`` and return parsed expenses."""
