@@ -1,100 +1,115 @@
-"""Utility integration with crewAI for expense extraction."""
-
-from __future__ import annotations
-
-from typing import Iterable, Mapping, List
-import json
+from langchain_community.tools.sql_database.tool import (
+    InfoSQLDatabaseTool,
+    ListSQLDatabaseTool,
+    QuerySQLCheckerTool,
+    QuerySQLDataBaseTool,
+)
+from langchain_community.utilities.sql_database import SQLDatabase
+import sqlite3 
+from dotenv import load_dotenv
+from crewai import Agent, Crew, Process, Task
+from crewai.tools import tool
+from textwrap import dedent
+from crewai import Agent, Crew, Process, Task, LLM
+from crewai.project import CrewBase, agent, crew, task
 import os
 
-from ..dao.money_transfer_dao import MoneyTransferDAO
-from ..dao.db_connection import ConnectionDB
+def get_db():
+    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"data" , "ddl","debug.db")
 
+    return SQLDatabase.from_uri("sqlite:///"+db_path)
+def get_llm(model: str):
+    load_dotenv()
+    return LLM(model=model,
+               api_base=os.getenv("AZURE_API_BASE"),
+               api_key=os.getenv("AZURE_API_KEY"),
+               api_version=os.getenv("AZURE_API_VERSION"))
 
-class CrewDocumentProcessor:
-    """Use crewAI agents to extract expenses from document text."""
+@tool("list_tables")
+def list_tables() -> str:
+    """List the available tables in the database"""
+    return ListSQLDatabaseTool(db=get_db()).invoke("")
 
-    def __init__(self, crew: object | None = None, db_path: str | None = None) -> None:
-        """Initialize the processor with an optional pre-configured crew and database."""
-        try:
-            from crewai import Agent, Crew, Task
-        except ImportError as exc:
-            raise ImportError(
-                "crewai package is required to use CrewDocumentProcessor"
-            ) from exc
+@tool("tables_schema")
+def tables_schema(tables: str) -> str:
+    """
+    Input is a comma-separated list of tables, output is the schema and sample rows
+    for those tables. Be sure that the tables actually exist by calling `list_tables` first!
+    Example Input: table1, table2, table3
+    """
+    tool = InfoSQLDatabaseTool(db=get_db())
+    return tool.invoke(tables)
 
-        if crew is not None:
-            self.crew = crewsd
-            return
+@tool("execute_sql")
+def execute_sql(sql_query: str) -> str:
+    """Execute a SQL query against the database. Returns the result"""
+    return QuerySQLDataBaseTool(db=get_db()).invoke(sql_query)
 
-        self.db_path = db_path or os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "data",
-            "ddl",
-            "debug.db",
+@tool("check_sql")
+def check_sql(sql_query: str) -> str:
+    """
+    Use this tool to double check if your query is correct before executing it. Always use this
+    tool before executing a query with `execute_sql`.
+    """
+    return QuerySQLCheckerTool(db=get_db(), llm=get_llm()).invoke({"query": sql_query})
+
+@CrewBase
+class MoneyTransferOperator(): 
+    agents_config = 'config/agents.yaml'
+    tasks_config = 'config/tasks.yaml'
+    @agent
+    def sql_expert(self) -> Agent:
+        load_dotenv()
+        return Agent(
+            config=self.agents_config['sql_expert'],
+            tools=[list_tables,tables_schema,execute_sql,check_sql],
+            llm=get_llm(model = "azure/o4-mini"),
+            allow_delegation=True
+        )    
+ 
+    @agent
+    def descriptor(self) -> Agent:
+        return Agent(
+        config=self.agents_config['descriptor']
+        llm=get_llm(model="azure/gpt-4o")
+        
+        )    
+ 
+    @task
+    def create_sql(self) -> Agent:
+        return  Task(
+            config = self.tasks_config['create_sql_task']
         )
-        self.db_connection = ConnectionDB(db_path=self.db_path)
-
-        def read_file(path: str) -> str:
-            """Tool to read a file and return its contents."""
-            with open(path, "r", encoding="utf-8") as fh:
-                return fh.read()
-
-       
-            return rows
-
-        extractor = Agent(
-            role="expense extraction expert",
-            goal="extract each expense from the given document",
-            backstory=(
-                "You carefully read receipts and invoices to identify all"
-                " expenses with date, description and amount."
-            ),
-            tools=[read_file],
+ 
+    @task
+    def describe(self) -> Agent:
+        return  Task(
+            config = self.taskss_config['describe_task']
         )
 
-        db_agent = Agent(
-            role="database agent",
-            goal="store the extracted expenses into the SQLite database",
-            backstory="You can execute queries on the local database.",
-            tools=[insert_expenses],
-        )
-
-        extract_task = Task(
-            description="Identify all expenses in the document text using the file reader tool.",
-            expected_output=(
-                "A JSON array of objects each containing date, description,"
-                " and amount fields"
-            ),
-            agent=extractor,
-        )
-
-        insert_task = Task(
-            description="Insert the extracted expenses into the database using the provided tool.",
-            expected_output="Number of rows inserted",
-            agent=db_agent,
-            context=[extract_task],
-        )
-
-        self.crew = Crew(agents=[extractor, db_agent], tasks=[extract_task, insert_task])
-   
-    def insert_expense_from_json(expenses_json: str) -> int:
-            """Tool to insert expenses into the database."""
-            expenses = json.loads(expenses_json)
-            dao = MoneyTransferDAO(db_path=self.db_path)
-            rows = 0
-            for exp in expenses:
-                rows += dao.create_transfer(
-                    exp.get("date"),
-                    float(exp.get("amount")),
-                    exp.get("category_id"),
-                    exp.get("user_id"),
-                    exp.get("description"),
-                    exp.get("incoming")
-                )
-
-    def parse_file(self, file_path: str) -> List[Mapping[str, str]]:
-        """Run the crew on ``file_path`` and return parsed expenses."""
-        result = self.crew.kickoff({"file_path": file_path})
-        if isinstance(result, str):
-            return json.loads(result)
-        return result
+    @crew
+    def crew(self) -> Crew:
+        """Creates the MoneyTransferOperator crew"""
+        return Crew(
+            agents=self.agents, # Automatically created by the @agent decorator
+            tasks=self.tasks, # Automatically created by the @task decorator
+            process=Process.sequential,
+            verbose=True,
+            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+            )
+    
+if __name__ == "__main__":
+    json  = {
+                "invoice_number": 1,
+                "invoice_total": 22,
+                "items":[
+                    {
+                        "description": "Mele Melinda",
+                        "quantity": 2,
+                        "total": 22
+                    }
+                ]
+            }
+    crew = MoneyTransferOperator()
+    result = crew.crew().kickoff(inputs=json)
+    print(result)
