@@ -56,7 +56,7 @@ def check_sql(sql_query: str) -> str:
 @CrewBase
 class MoneyTransferOperator(): 
     agents_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','agents.yaml')
-    tasks_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','task.yaml')
+    tasks_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','tasks.yaml')
 
     @agent
     def sql_expert(self) -> Agent:
@@ -84,12 +84,11 @@ class MoneyTransferOperator():
     @task
     def describe(self) -> Agent:
         return  Task(
-            config = self.tasks_config['describe_task']
-        )
+            config=self.tasks_config['describe_task']
 
     @crew
     def crew(self) -> Crew:
-        """Creates the MoneyTransferOperator crew"""
+        """Creates the CrewDocumentProcessor crew"""
         return Crew(
             agents=self.agents, # Automatically created by the @agent decorator
             tasks=self.tasks, # Automatically created by the @task decorator
@@ -110,6 +109,6 @@ if __name__ == "__main__":
                     }
                 ]
             }
-    crew = MoneyTransferOperator()
-    result = crew.crew().kickoff(inputs=json)
+    processor = CrewDocumentProcessor()
+    result = processor.crew().kickoff(inputs=json)
     print(result)
