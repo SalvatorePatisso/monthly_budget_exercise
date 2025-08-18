@@ -16,8 +16,8 @@ import os
 
 def get_db():
     db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"data" , "ddl","debug.db")
-
     return SQLDatabase.from_uri("sqlite:///"+db_path)
+
 def get_llm(model: str):
     load_dotenv()
     return LLM(model=model,
@@ -55,8 +55,9 @@ def check_sql(sql_query: str) -> str:
 
 @CrewBase
 class MoneyTransferOperator(): 
-    agents_config = 'config/agents.yaml'
-    tasks_config = 'config/tasks.yaml'
+    agents_config = './'
+    tasks_config = './'
+
     @agent
     def sql_expert(self) -> Agent:
         load_dotenv()
@@ -70,9 +71,8 @@ class MoneyTransferOperator():
     @agent
     def descriptor(self) -> Agent:
         return Agent(
-        config=self.agents_config['descriptor']
+        config=self.agents_config['descriptor'],
         llm=get_llm(model="azure/gpt-4o")
-        
         )    
  
     @task
@@ -84,7 +84,7 @@ class MoneyTransferOperator():
     @task
     def describe(self) -> Agent:
         return  Task(
-            config = self.taskss_config['describe_task']
+            config = self.tasks_config['describe_task']
         )
 
     @crew

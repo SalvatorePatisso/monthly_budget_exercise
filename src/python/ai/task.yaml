@@ -1,0 +1,14 @@
+create_sql_task:
+  description: >
+    Create an insert query in sqlite3 to insert data in the money transfer table. The values to insert are taken from a json file. The description field value instead is given by the descriptor agent.
+  expected_output: >
+    A string containing only the sqlite insert query
+  agent: sql_expert
+
+describe_task:
+  description: >
+    Produce a brief desription of the receipt described by a set of a structured data like a json file. Insert into the brief description information regarding what type of receipts is.
+  expected_output: >
+    A fully fledge reports with the mains topics, each with a full section of information. Formatted as a normal string to store in a database.
+  agent: descriptor
+
