@@ -54,7 +54,7 @@ def check_sql(sql_query: str) -> str:
     return QuerySQLCheckerTool(db=get_db(), llm=get_llm()).invoke({"query": sql_query})
 
 @CrewBase
-class MoneyTransferOperator(): 
+class CrewDocumentProcessor:
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
     @agent
@@ -70,10 +70,9 @@ class MoneyTransferOperator():
     @agent
     def descriptor(self) -> Agent:
         return Agent(
-        config=self.agents_config['descriptor']
-        llm=get_llm(model="azure/gpt-4o")
-        
-        )    
+            config=self.agents_config['descriptor'],
+            llm=get_llm(model="azure/gpt-4o"),
+        )
  
     @task
     def create_sql(self) -> Agent:
@@ -84,12 +83,12 @@ class MoneyTransferOperator():
     @task
     def describe(self) -> Agent:
         return  Task(
-            config = self.taskss_config['describe_task']
+            config=self.tasks_config['describe_task']
         )
 
     @crew
     def crew(self) -> Crew:
-        """Creates the MoneyTransferOperator crew"""
+        """Creates the CrewDocumentProcessor crew"""
         return Crew(
             agents=self.agents, # Automatically created by the @agent decorator
             tasks=self.tasks, # Automatically created by the @task decorator
@@ -110,6 +109,6 @@ if __name__ == "__main__":
                     }
                 ]
             }
-    crew = MoneyTransferOperator()
-    result = crew.crew().kickoff(inputs=json)
+    processor = CrewDocumentProcessor()
+    result = processor.crew().kickoff(inputs=json)
     print(result)
