@@ -55,8 +55,8 @@ def check_sql(sql_query: str) -> str:
 
 @CrewBase
 class MoneyTransferOperator(): 
-    agents_config = './'
-    tasks_config = './'
+    agents_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','agents.yaml')
+    tasks_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','task.yaml')
 
     @agent
     def sql_expert(self) -> Agent:
