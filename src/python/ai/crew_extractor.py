@@ -109,6 +109,6 @@ if __name__ == "__main__":
                     }
                 ]
             }
-    processor = CrewDocumentProcessor()
+    processor = MoneyTransferOperator()
     result = processor.crew().kickoff(inputs=json)
     print(result)
