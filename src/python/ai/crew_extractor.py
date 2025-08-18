@@ -16,8 +16,8 @@ import os
 
 def get_db():
     db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"data" , "ddl","debug.db")
-
     return SQLDatabase.from_uri("sqlite:///"+db_path)
+
 def get_llm(model: str):
     load_dotenv()
     return LLM(model=model,
@@ -57,6 +57,7 @@ def check_sql(sql_query: str) -> str:
 class CrewDocumentProcessor:
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
+
     @agent
     def sql_expert(self) -> Agent:
         load_dotenv()
@@ -70,9 +71,9 @@ class CrewDocumentProcessor:
     @agent
     def descriptor(self) -> Agent:
         return Agent(
-            config=self.agents_config['descriptor'],
-            llm=get_llm(model="azure/gpt-4o"),
-        )
+        config=self.agents_config['descriptor'],
+        llm=get_llm(model="azure/gpt-4o")
+        )    
  
     @task
     def create_sql(self) -> Agent:
@@ -84,7 +85,6 @@ class CrewDocumentProcessor:
     def describe(self) -> Agent:
         return  Task(
             config=self.tasks_config['describe_task']
-        )
 
     @crew
     def crew(self) -> Crew:
