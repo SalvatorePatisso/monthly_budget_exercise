@@ -85,7 +85,7 @@ class MoneyTransferOperator():
     def describe(self) -> Agent:
         return  Task(
             config=self.tasks_config['describe_task']
-
+        )
     @crew
     def crew(self) -> Crew:
         """Creates the CrewDocumentProcessor crew"""
