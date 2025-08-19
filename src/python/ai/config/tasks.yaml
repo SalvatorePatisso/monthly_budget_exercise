@@ -2,7 +2,7 @@ create_sql_task:
   description: >
     Create an insert query in sqlite3 to insert data in the money transfer table of the schema. Use the tools to read the schemas and produce a valid sql string. The values to insert are taken from the context.
   expected_output: >
-    A string containing only the sqlite insert query
+    A query string and values to insert in the query. Also category description is deducted from the database using category_id 
   agent: sql_expert
 
 describe_task:
