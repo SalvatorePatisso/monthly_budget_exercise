@@ -9,14 +9,12 @@ from typing import Iterable, Mapping
 class AzureGPT4O:
     """Simple wrapper around the Azure OpenAI GPT-4o deployment."""
 
-    def __init__(self, *, endpoint: str | None = None, api_key: str | None = None,
-                 deployment: str | None = None, api_version: str = "2024-05-01-preview"):
+    def __init__(self, *, endpoint: str | None = None, api_key: str | None = None, api_version: str = "2024-05-01-preview"):
         load_dotenv()
-        self.endpoint = endpoint or os.getenv("AZURE_OPENAI_ENDPOINT") or os.getenv("PROJECT_ENDPOINT")
-        self.api_key = api_key or os.getenv("AZURE_OPENAI_KEY")
-        self.deployment = deployment or os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        self.api_version = api_version
-        if not all([self.endpoint, self.api_key, self.deployment]):
+        self.endpoint = endpoint or os.getenv("AZURE_API_ENDPOINT") or os.getenv("PROJECT_ENDPOINT")
+        self.api_key = api_key or os.getenv("AZURE_API_KEY")
+        self.api_version = os.getenv("AZURE_API_VERSION")
+        if not all([self.endpoint, self.api_key]):
             raise ValueError("Endpoint, API key and deployment must be provided")
 
     def chat_completion(self, messages: Iterable[Mapping[str, str]], **kwargs) -> str:

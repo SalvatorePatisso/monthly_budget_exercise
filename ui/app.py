@@ -8,6 +8,7 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "src"))
 
+
 from python.dao.money_transfer_dao import MoneyTransferDAO
 from python.dao.user_dao import UserDAO
 from python.ai.chatbot import ChatBot
@@ -70,6 +71,31 @@ if page == "Homepage":
             unsafe_allow_html=True,
         )
 
+        # Sezione Inserisci Spesa
+        if st.button("Inserisci spesa"):
+            st.session_state.show_expense_form = True
+
+        if st.session_state.get("show_expense_form", False):
+            st.subheader("Aggiungi una nuova spesa")
+            with st.form("expense_form"):
+                amount = st.number_input("Importo (€)", min_value=0.01, step=0.01)
+                description = st.text_input("Descrizione")
+                category = st.selectbox("Categoria", ["Cibo", "Trasporti", "Intrattenimento", "Altro"])
+                date = st.date_input("Data", value=today)
+                submitted = st.form_submit_button("Salva spesa 🚀")
+                if submitted:
+                    dao.create_transfer(
+                        user_id=user_id,
+                        amount=amount,
+                        description=description,
+                        category_id=category,
+                        date=date.isoformat(),
+                        incoming=0
+                    )
+                    st.success("Spesa inserita correttamente!")
+                    st.session_state.show_expense_form = False
+                    st.experimental_rerun()
+
 elif page == "Chat":
     st.title("Chat con LLM")
     if "chatbot" not in st.session_state:
@@ -86,3 +112,105 @@ elif page == "Chat":
     if st.button("Invia") and user_input:
         st.session_state.chatbot.response(user_input)
         st.experimental_rerun()
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Debug MoneyTransferDAO")
+debug_action = st.sidebar.selectbox(
+    "Scegli funzionalità",
+    [
+        "Inserisci una spesa",
+        "Inserisci più spese",
+        "Cerca una spesa",
+        "Recupera tutte le spese",
+        "Recupera una spesa",
+        "Aggiorna una spesa",
+        "Elimina una spesa"
+    ]
+)
+
+if debug_action == "create_transfer":
+    st.header("create_transfer")
+    with st.form("create_transfer_form"):
+        date = st.text_input("data (YYYY-MM-DD)", value=str(datetime.date.today()))
+        amount = st.number_input("Prezzo", min_value=0.01, step=0.01)
+        category_id = st.number_input("ID Categoria", min_value=1, step=1)
+        user_id = st.number_input("ID Utente", min_value=1, step=1)
+        description = st.text_input("Descrizione", value="")
+        incoming = st.selectbox("Entrata", [0, 1])
+        submitted = st.form_submit_button("Esegui create_transfer")
+        if submitted:
+            result = dao.create_transfer(
+                date=date,
+                amount=amount,
+                category_id=category_id,
+                user_id=user_id,
+                description=description,
+                incoming=incoming
+            )
+            st.write("Risultato:", result)
+
+elif debug_action == "create_multiple_transfers":
+    st.header("create_multiple_transfers")
+    st.info("Inserisci una lista di tuple: (date, amount, category_id, user_id, description, incoming)")
+    transfers_str = st.text_area("transfers (esempio: [('2025-08-19', 10.5, 1, 1, 'desc', 0)])")
+    if st.button("Esegui create_multiple_transfers"):
+        try:
+            transfers = eval(transfers_str)
+            result = dao.create_multiple_transfers(transfers)
+            st.write("Risultato:", result)
+        except Exception as e:
+            st.error(f"Errore: {e}")
+
+elif debug_action == "search_transaction_for_attributes":
+    st.header("search_transaction_for_attributes")
+    st.info("Inserisci un dizionario di attributi. Esempio: {'user_id': 1, 'amount': 10.5}")
+    attrs_str = st.text_area("attributes")
+    if st.button("Esegui search_transaction_for_attributes"):
+        try:
+            attrs = eval(attrs_str)
+            result = dao.search_transaction_for_attributes(attrs)
+            st.write("Risultato:", result)
+        except Exception as e:
+            st.error(f"Errore: {e}")
+
+elif debug_action == "get_all_transfers":
+    st.header("get_all_transfers")
+    if st.button("Esegui get_all_transfers"):
+        result = dao.get_all_transfers()
+        st.write("Risultato:", result)
+
+elif debug_action == "get_transfer_by_id":
+    st.header("get_transfer_by_id")
+    transfer_id = st.number_input("transfer_id", min_value=1, step=1)
+    if st.button("Esegui get_transfer_by_id"):
+        result = dao.get_transfer_by_id(transfer_id)
+        st.write("Risultato:", result)
+
+elif debug_action == "update_transfer":
+    st.header("update_transfer")
+    with st.form("update_transfer_form"):
+        transfer_id = st.number_input("transfer_id", min_value=1, step=1)
+        date = st.text_input("date (YYYY-MM-DD)", value="")
+        amount = st.text_input("amount", value="")
+        category_id = st.text_input("category_id", value="")
+        user_id = st.text_input("user_id", value="")
+        description = st.text_input("description", value="")
+        incoming = st.text_input("incoming", value="")
+        submitted = st.form_submit_button("Esegui update_transfer")
+        if submitted:
+            kwargs = {}
+            if date: kwargs["date"] = date
+            if amount: kwargs["amount"] = float(amount)
+            if category_id: kwargs["category_id"] = int(category_id)
+            if user_id: kwargs["user_id"] = int(user_id)
+            if description: kwargs["description"] = description
+            if incoming: kwargs["incoming"] = int(incoming)
+            result = dao.update_transfer(transfer_id, **kwargs)
+            st.write("Risultato:", result)
+
+elif debug_action == "delete_transfer":
+    st.header("delete_transfer")
+    transfer_id = st.number_input("transfer_id", min_value=1, step=1)
+    if st.button("Esegui delete_transfer"):
+        result = dao.delete_transfer(transfer_id)
+        st.write("Risultato:", result)
