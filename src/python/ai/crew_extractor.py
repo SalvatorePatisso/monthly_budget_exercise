@@ -15,13 +15,24 @@ from crewai.project import CrewBase, agent, crew, task
 import os
 
 def get_db():
-    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"data" , "ddl","debug.db")
-    return SQLDatabase.from_uri("sqlite:///"+db_path)
+    db_path = os.path.join(os.path.dirname(
+                            os.path.dirname(
+                                os.path.dirname(
+                                    os.path.dirname(
+                                        os.path.abspath(__file__)
+                                                    )
+                                                )
+                                            )
+                                        ),
+                            "data" , "ddl","debug.db")
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"Database file not found at {db_path}")
+    return SQLDatabase.from_uri(f"sqlite:///{db_path}")
 
 def get_llm(model: str):
     load_dotenv()
     return LLM(model=model,
-               api_base=os.getenv("AZURE_API_BASE"),
+               api_base=os.getenv("AZURE_API_ENDPOINT"),
                api_key=os.getenv("AZURE_API_KEY"),
                api_version=os.getenv("AZURE_API_VERSION"))
 
@@ -64,7 +75,7 @@ class MoneyTransferOperator():
         return Agent(
             config=self.agents_config['sql_expert'],
             tools=[list_tables,tables_schema,execute_sql,check_sql],
-            llm=get_llm(model = "azure/o4-mini"),
+            llm=get_llm(model="azure/gpt-4o-mini"),
             allow_delegation=True
         )    
  
@@ -72,43 +83,54 @@ class MoneyTransferOperator():
     def descriptor(self) -> Agent:
         return Agent(
         config=self.agents_config['descriptor'],
-        llm=get_llm(model="azure/gpt-4o")
+        llm=get_llm(model="azure/gpt-4o-mini")
         )    
  
     @task
     def create_sql(self) -> Agent:
         return  Task(
-            config = self.tasks_config['create_sql_task']
+            config = self.tasks_config['create_sql_task'],
+            context=[self.describe()],
+            agent=self.sql_expert()
         )
  
     @task
     def describe(self) -> Agent:
         return  Task(
-            config=self.tasks_config['describe_task']
+            config=self.tasks_config['describe_task'],
+            agent=self.descriptor()
         )
     @crew
     def crew(self) -> Crew:
         """Creates the CrewDocumentProcessor crew"""
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
-            process=Process.sequential,
-            verbose=True,
-            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+            agents=[self.descriptor(),self.sql_expert()],
+            tasks =[self.describe(),self.create_sql()], 
+            process=Process.sequential
             )
     
 if __name__ == "__main__":
-    json  = {
-                "invoice_number": 1,
-                "invoice_total": 22,
-                "items":[
+        inputs = {
+            "json": """
+            {
+                "name" : "supermercato k3",
+                "items": [
+                    {
+                        "description": "Mandorle"
+                        "quantity":4
+                        "cost" : 22
+                    },
                     {
                         "description": "Mele Melinda",
                         "quantity": 2,
-                        "total": 22
+                        "cost": 22
                     }
                 ]
             }
-    processor = MoneyTransferOperator()
-    result = processor.crew().kickoff(inputs=json)
-    print(result)
+            """
+        }
+
+        print(inputs)
+        processor = MoneyTransferOperator()
+        result = processor.crew().kickoff(inputs=inputs)
+        print(result) 

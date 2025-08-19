@@ -1,14 +1,15 @@
 create_sql_task:
   description: >
-    Create an insert query in sqlite3 to insert data in the money transfer table. The values to insert are taken from a json file. The description field value instead is given by the descriptor agent.
+    Create an insert query in sqlite3 to insert data in the money transfer table of the schema. Use the tools to read the schemas and produce a valid sql string. The values to insert are taken from the context.
   expected_output: >
     A string containing only the sqlite insert query
   agent: sql_expert
 
 describe_task:
   description: >
-    Produce a brief desription of the receipt described by a set of a structured data like a json file. Insert into the brief description information regarding what type of receipts is.
+    Produce a brief desription of the receipt described by information provided as {json}. Classify the receipts in such a way to produce a very short description with information regarding what type of receipts is.
   expected_output: >
-    A fully fledge reports with the mains topics, each with a full section of information. Formatted as a normal string to store in a database.
+    {json} with a "description" field added that contains the brief produced from the task
   agent: descriptor
 
+#exp output describe task: A brief resume of the json string given as input. Formatted as a normal string to store in a database.
