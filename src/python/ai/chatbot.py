@@ -2,22 +2,27 @@ from .azure_gpt import AzureGPT4O
 from typing import Iterable, Mapping
 
 class ChatBot():
-    def __init__(self, model: str = 'azure_gpt', history : Iterable[Mapping[str,str]] = [], system_message: str = ""):
+    def __init__(self, model: str = 'gpt_4o_mini', history : Iterable[Mapping[str,str]] = [], system_message: str = ""):
+        """
         
+        """
+
         #init system message to tell the llm how to behave
         self.system_prompt = system_message
 
         #init chat history
-        if not history[0]['role'] == 'system':
+        if len(history) == 0:
+            self.history = [ {'role': 'system', 'content': system_message} ]
+        elif history[0]['role'] == 'system':
             self.history = [ {'role': 'system', 'content': system_message} ] + history
         else: 
             self.history = history
             self.system_prompt = self.history[0]['content']
         
         #initialize model
-        if model == 'azure_gpt':
+        if model == 'gpt_4o_mini':
             self.llm  = AzureGPT4O()
-    
+            
     def response(self, input: str):
         """Get the response of the llm to an input based on the chat history.
          Add this input to the history
