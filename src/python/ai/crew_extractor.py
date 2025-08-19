@@ -13,6 +13,10 @@ from textwrap import dedent
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 import os
+from crewai.flow.flow import Flow, listen, start
+from pydantic import BaseModel
+
+
 
 def get_db():
     db_path = os.path.join(os.path.dirname(
@@ -64,6 +68,15 @@ def check_sql(sql_query: str) -> str:
     """
     return QuerySQLCheckerTool(db=get_db(), llm=get_llm()).invoke({"query": sql_query})
 
+class QueryValuesModel(BaseModel):
+    query: str
+    date: str
+    amount: float
+    description: str
+    category_id: int
+    category_description: str
+    is_incoming: bool
+
 @CrewBase
 class MoneyTransferOperator(): 
     agents_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config','agents.yaml')
@@ -91,7 +104,8 @@ class MoneyTransferOperator():
         return  Task(
             config = self.tasks_config['create_sql_task'],
             context=[self.describe()],
-            agent=self.sql_expert()
+            agent=self.sql_expert(),
+            output_json = QueryValuesModel
         )
  
     @task
@@ -113,15 +127,15 @@ if __name__ == "__main__":
         inputs = {
             "json": """
             {
-                "name" : "supermercato k3",
+                "name" : "Da Giovanni Eletric",
                 "items": [
                     {
-                        "description": "Mandorle"
+                        "description": "lampadine"
                         "quantity":4
                         "cost" : 22
                     },
                     {
-                        "description": "Mele Melinda",
+                        "description": "citofoni",
                         "quantity": 2,
                         "cost": 22
                     }
@@ -133,4 +147,4 @@ if __name__ == "__main__":
         print(inputs)
         processor = MoneyTransferOperator()
         result = processor.crew().kickoff(inputs=inputs)
-        print(result) 
+        print(result['description']) 
