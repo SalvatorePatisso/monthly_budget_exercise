@@ -3,13 +3,24 @@ create_sql_task:
     Create an insert query in sqlite3 to insert data in the money transfer table of the schema. Use the tools to read the schemas and produce a valid sql string. The values to insert are taken from the context.
   expected_output: >
     A query string and values to insert in the query. Also category description is deducted from the database using category_id 
-  agent: sql_expert
+
 
 describe_task:
   description: >
     Produce a brief desription of the receipt described by information provided as {json}. Classify the receipts in such a way to produce a very short description with information regarding what type of receipts is.
   expected_output: >
     {json} with a "description" field added that contains the brief produced from the task
-  agent: descriptor
 
-#exp output describe task: A brief resume of the json string given as input. Formatted as a normal string to store in a database.
+
+
+query_db:
+  description: >
+    Query the database based on the user input {user_input} searching for the useful info to use to answer the questions 
+  expected_output: >
+    Query results in json format
+
+answer_user:
+  description: >
+      Answer to the user input {user_input} based on the results of the db interrogation of the receipt described by information provided as json.
+  expected_output: >
+      Simple string containing an textual and detailed answer to input
