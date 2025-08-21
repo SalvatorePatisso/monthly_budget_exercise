@@ -53,3 +53,13 @@ class CategoriesDAO:
         """Delete a category by its ID."""
         sql = "DELETE FROM categories WHERE category_id = ?"
         return self.db_connection.execute_ddl(sql, (category_id,))
+
+
+if __name__== "__main__":
+    from pathlib import Path
+    PROJECT_ROOT = Path(__file__).resolve().parents[3]
+    print("project_root",PROJECT_ROOT)
+    DB_PATH = os.getenv("DB_PATH") or str(PROJECT_ROOT / "data" / "ddl" / "debug.db")
+
+    dao = CategoriesDAO(db_path=DB_PATH)
+    print(dao.get_all_categories()[0][1])
