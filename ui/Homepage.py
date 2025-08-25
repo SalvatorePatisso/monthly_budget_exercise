@@ -127,22 +127,27 @@ if page == "Homepage":
                 "user_id": "ID Utente"
             }
 
-            # Mostra un button per ogni attributo
+            # Inizializza lo stato dei filtri se non esiste
+            if "search_filters" not in st.session_state:
+                st.session_state.search_filters = {}
+
+            # Espandi per ogni filtro
             for key, label in ATTRIBUTI.items():
-                if key not in st.session_state.search_attributes:
-                    if st.button(f"Aggiungi filtro: {label}"):
-                        st.session_state.search_attributes[key] = True
+                with st.expander(f"Aggiungi filtro: {label}", expanded=False):
+                    value = st.text_input(f"Inserisci valore per {label}", key=f"filter_{key}")
+                    if value:
+                        st.session_state.search_filters[key] = value
 
-            # Mostra le textbox per gli attributi selezionati
-            for key in st.session_state.search_attributes:
-                if key not in st.session_state.search_inputs:
-                    st.session_state.search_inputs[key] = st.text_input(f"Inserisci valore per {ATTRIBUTI[key]}", key=key)
+            # Mostra i filtri attivi
+            if st.session_state.search_filters:
+                st.info("Filtri attivi:")
+                for k, v in st.session_state.search_filters.items():
+                    st.write(f"{ATTRIBUTI[k]}: {v}")
 
-            # Pulsante per cercare la spesa
-            if st.button("Cerca la Spesa"):
-                # Costruisci il dizionario degli attributi
+            # Button per visualizzare il risultato
+            if st.button("Visualizza risultato"):
                 search_dict = {}
-                for k, v in st.session_state.search_inputs.items():
+                for k, v in st.session_state.search_filters.items():
                     if v != "":
                         # Cast automatico per alcuni campi
                         if k in ["start_amount", "end_amount", "amount"]:
@@ -167,7 +172,6 @@ if page == "Homepage":
                 st.subheader("Risultati della ricerca")
                 for r in st.session_state.search_results:
                     st.write(r)
-                    # Pulsanti Aggiorna e Cancella per ogni risultato
                     col_upd, col_del = st.columns(2)
                     with col_upd:
                         if st.button("Aggiorna spesa", key=f"upd_{r[0]}"):
